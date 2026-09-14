@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bilancio">
+<title>Bilancio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDEAE1;
+    --paper-raised:#F5F3EC;
+    --ink:#23282E;
+    --ink-soft:#5B6470;
+    --rule:#D8D2C4;
+    --income:#3F6B4F;
+    --income-soft:#E4ECE6;
+    --expense:#A64B3D;
+    --expense-soft:#F3E4E1;
+    --fixed:#57677A;
+    --fixed-soft:#E6E9ED;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--ink); }
+  body{
+    font-family:'IBM Plex Sans', sans-serif;
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    min-height:100vh;
+    min-height:100dvh;
+  }
+  #app{
+    width:100%;
+    max-width:480px;
+    background:var(--paper);
+    min-height:100vh;
+    min-height:100dvh;
+    padding-bottom:48px;
+  }
+  header{
+    background:var(--ink);
+    color:var(--paper);
+    padding:calc(env(safe-area-inset-top) + 20px) 20px 22px;
+  }
+  .month-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:15px;
+    letter-spacing:.02em;
+    color:#B9BFC7;
+  }
+  .month-nav button{
+    background:none;
+    border:none;
+    color:#B9BFC7;
+    font-size:20px;
+    line-height:1;
+    padding:6px 10px;
+    cursor:pointer;
+  }
+  .month-nav button:active{ color:#fff; }
+  #month-label{ text-transform:capitalize; }
+  .saldo-row{
+    margin-top:10px;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  #saldo{
+    font-family:'Fraunces', serif;
+    font-size:44px;
+    font-weight:500;
+    font-variant-numeric:tabular-nums;
+  }
+  .saldo-label{ font-size:13px; color:#B9BFC7; }
+  .sub-totals{
+    margin-top:14px;
+    display:flex;
+    gap:22px;
+    font-size:14px;
+  }
+  .sub-totals span.amt{ font-variant-numeric:tabular-nums; font-weight:500; }
+  .sub-totals .in .amt{ color:#8FCBA3; }
+  .sub-totals .out .amt{ color:#E5A79A; }
+
+  section{ padding:20px; border-bottom:1px solid var(--rule); }
+  h2{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:17px;
+    margin:0 0 4px;
+  }
+  .section-hint{ font-size:12.5px; color:var(--ink-soft); margin:0 0 14px; }
+
+  .fixed-card{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--fixed-soft);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-bottom:10px;
+  }
+  .fixed-info .name{ font-size:15px; font-weight:500; }
+  .fixed-info .status{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .fixed-card.paid .fixed-info .status{ color:var(--fixed); }
+  .fixed-amt{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .fixed-amt input{
+    width:64px;
+    text-align:right;
+    border:none;
+    background:transparent;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:15px;
+    font-variant-numeric:tabular-nums;
+    color:var(--ink);
+    border-bottom:1px solid transparent;
+  }
+  .fixed-amt input:focus{ outline:none; border-bottom:1px solid var(--fixed); }
+  .fixed-btn{
+    border:none;
+    background:var(--fixed);
+    color:#fff;
+    font-size:13px;
+    padding:7px 12px;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .fixed-btn.done{ background:transparent; color:var(--fixed); font-size:15px; padding:0 4px; }
+
+  .type-toggle{
+    display:flex;
+    background:var(--paper-raised);
+    border:1px solid var(--rule);
+    border-radius:9px;
+    padding:3px;
+    margin-bottom:14px;
+  }
+  .type-toggle button{
+    flex:1;
+    border:none;
+    background:none;
+    padding:9px 0;
+    font-size:14px;
+    font-weight:500;
+    color:var(--ink-soft);
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .type-toggle button.active.out{ background:var(--expense-soft); color:var(--expense); }
+  .type-toggle button.active.in{ background:var(--income-soft); color:var(--income); }
+
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:12.5px; color:var(--ink-soft); margin-bottom:5px; }
+  .field select, .field input{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--rule);
+    border-radius:8px;
+    background:var(--paper-raised);
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:15px;
+    color:var(--ink);
+  }
+  .field select:focus, .field input:focus{ outline:none; border-color:var(--ink-soft); }
+  .row2{ display:flex; gap:10px; }
+  .row2 .field{ flex:1; }
+
+  .add-cat{
+    display:flex;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .add-cat input{
+    flex:1;
+    padding:8px 10px;
+    border:1px dashed var(--rule);
+    border-radius:8px;
+    background:transparent;
+    font-size:13px;
+  }
+  .add-cat button{
+    border:1px solid var(--rule);
+    background:var(--paper-raised);
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:13px;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+
+  #save-btn{
+    width:100%;
+    border:none;
+    padding:13px 0;
+    border-radius:9px;
+    font-size:15px;
+    font-weight:500;
+    color:#fff;
+    cursor:pointer;
+  }
+  #save-btn.out{ background:var(--expense); }
+  #save-btn.in{ background:var(--income); }
+
+  .tx-day{ margin-bottom:6px; }
+  .tx-day-label{
+    font-size:12px;
+    color:var(--ink-soft);
+    padding:10px 0 6px;
+    border-top:1px solid var(--rule);
+  }
+  .tx-day:first-child .tx-day-label{ border-top:none; padding-top:0; }
+  .tx-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:9px 0;
+  }
+  .tx-cat{ font-size:14.5px; }
+  .tx-note{ font-size:12px; color:var(--ink-soft); margin-top:1px; }
+  .tx-right{ display:flex; align-items:center; gap:10px; }
+  .tx-amt{ font-variant-numeric:tabular-nums; font-size:15px; font-weight:500; }
+  .tx-amt.in{ color:var(--income); }
+  .tx-amt.out{ color:var(--expense); }
+  .tx-del{
+    border:none;
+    background:none;
+    color:var(--ink-soft);
+    font-size:18px;
+    line-height:1;
+    padding:2px 4px;
+    cursor:pointer;
+  }
+  .empty-note{ font-size:13.5px; color:var(--ink-soft); padding:8px 0; }
+
+  .bar-row{ margin-bottom:12px; }
+  .bar-row .bar-top{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    margin-bottom:5px;
+  }
+  .bar-track{
+    height:7px;
+    background:var(--rule);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .bar-fill{ height:100%; border-radius:4px; background:var(--expense); }
+  .bar-fill.in{ background:var(--income); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="month-nav">
+      <button id="prev-month" aria-label="Mese precedente">‹</button>
+      <span id="month-label"></span>
+      <button id="next-month" aria-label="Mese successivo">›</button>
+    </div>
+    <div class="saldo-row">
+      <div id="saldo">€0</div>
+      <div class="saldo-label">saldo del mese</div>
+    </div>
+    <div class="sub-totals">
+      <div class="in">Entrate <span class="amt" id="tot-in">€0</span></div>
+      <div class="out">Uscite <span class="amt" id="tot-out">€0</span></div>
+    </div>
+  </header>
+
+  <section>
+    <h2>Spese fisse</h2>
+    <p class="section-hint">Un tocco per registrarle nel mese corrente.</p>
+    <div id="fixed-list"></div>
+  </section>
+
+  <section>
+    <h2>Nuovo movimento</h2>
+    <p class="section-hint">L'importo si ricorda da solo per ogni categoria.</p>
+
+    <div class="type-toggle">
+      <button id="btn-out" class="active out" data-type="out">Uscita</button>
+      <button id="btn-in" data-type="in">Entrata</button>
+    </div>
+
+    <div class="field">
+      <label for="cat-select">Categoria</label>
+      <select id="cat-select"></select>
+    </div>
+
+    <div class="add-cat">
+      <input id="new-cat" placeholder="Aggiungi una categoria…" maxlength="24">
+      <button id="add-cat-btn">Aggiungi</button>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label for="amt-input">Importo (€)</label>
+        <input id="amt-input" type="number" inputmode="decimal" step="0.01" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label for="date-input">Data</label>
+        <input id="date-input" type="date">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="note-input">Nota (facoltativa)</label>
+      <input id="note-input" placeholder="es. cena con amici">
+    </div>
+
+    <button id="save-btn" class="out">Salva uscita</button>
+  </section>
+
+  <section>
+    <h2>Movimenti del mese</h2>
+    <div id="tx-list"></div>
+  </section>
+
+  <section style="border-bottom:none;">
+    <h2>Per categoria</h2>
+    <div id="breakdown"></div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  const LS_TX = 'bilancio_tx';
+  const LS_LAST = 'bilancio_lastAmounts';
+  const LS_CATS = 'bilancio_cats';
+
+  const FIXED = [
+    { key:'Affitto', default:425 },
+    { key:'Palestra', default:65 }
+  ];
+  const defaultCats = {
+    out: ['Spesa','Trasporti','Svago','Salute','Varie'],
+    in: ['Entrate']
+  };
+
+  let tx = JSON.parse(localStorage.getItem(LS_TX) || '[]');
+  let lastAmounts = JSON.parse(localStorage.getItem(LS_LAST) || '{}');
+  let cats = JSON.parse(localStorage.getItem(LS_CATS) || 'null') || defaultCats;
+
+  let currentType = 'out';
+  let viewDate = new Date();
+  viewDate.setDate(1);
+
+  const monthLabelEl = document.getElementById('month-label');
+  const saldoEl = document.getElementById('saldo');
+  const totInEl = document.getElementById('tot-in');
+  const totOutEl = document.getElementById('tot-out');
+  const fixedListEl = document.getElementById('fixed-list');
+  const catSelect = document.getElementById('cat-select');
+  const amtInput = document.getElementById('amt-input');
+  const dateInput = document.getElementById('date-input');
+  const noteInput = document.getElementById('note-input');
+  const saveBtn = document.getElementById('save-btn');
+  const txListEl = document.getElementById('tx-list');
+  const breakdownEl = document.getElementById('breakdown');
+
+  function euro(n){
+    return '€' + n.toLocaleString('it-IT', {minimumFractionDigits:0, maximumFractionDigits:2});
+  }
+  function todayStr(){
+    const d = new Date();
+    return d.toISOString().slice(0,10);
+  }
+  function monthKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+  function isInViewMonth(dateStr){
+    return dateStr.slice(0,7) === monthKey(viewDate);
+  }
+  function save(){
+    localStorage.setItem(LS_TX, JSON.stringify(tx));
+    localStorage.setItem(LS_LAST, JSON.stringify(lastAmounts));
+    localStorage.setItem(LS_CATS, JSON.stringify(cats));
+  }
+
+  function renderMonthLabel(){
+    monthLabelEl.textContent = viewDate.toLocaleDateString('it-IT', {month:'long', year:'numeric'});
+  }
+
+  function renderFixed(){
+    fixedListEl.innerHTML = '';
+    FIXED.forEach(f => {
+      const paidTx = tx.find(t => t.category === f.key && isInViewMonth(t.date));
+      const remembered = lastAmounts[f.key] != null ? lastAmounts[f.key] : f.default;
+      const card = document.createElement('div');
+      card.className = 'fixed-card' + (paidTx ? ' paid' : '');
+      card.innerHTML = `
+        <div class="fixed-info">
+          <div class="name">${f.key}</div>
+          <div class="status">${paidTx ? 'Registrata · ' + euro(paidTx.amount) : 'Non ancora registrata'}</div>
+        </div>
+        <div class="fixed-amt">
+          ${paidTx
+            ? `<button class="fixed-btn done" data-del="${paidTx.id}">✓</button>`
+            : `<input type="number" step="0.01" value="${remembered}" data-fixed-amt="${f.key}">
+               <button class="fixed-btn" data-fixed="${f.key}">Registra</button>`
+          }
+        </div>
+      `;
+      fixedListEl.appendChild(card);
+    });
+
+    fixedListEl.querySelectorAll('[data-fixed]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-fixed');
+        const input = fixedListEl.querySelector(`[data-fixed-amt="${key}"]`);
+        const amount = parseFloat(input.value) || 0;
+        addTx('out', key, amount, todayStr(), '');
+      });
+    });
+    fixedListEl.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        removeTx(btn.getAttribute('data-del'));
+      });
+    });
+  }
+
+  function currentCatList(){
+    return cats[currentType];
+  }
+
+  function renderCatSelect(){
+    catSelect.innerHTML = '';
+    currentCatList().forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      catSelect.appendChild(opt);
+    });
+    prefillAmount();
+  }
+
+  function prefillAmount(){
+    const cat = catSelect.value;
+    const remembered = lastAmounts[cat];
+    amtInput.value = remembered != null ? remembered : '';
+  }
+
+  function setType(type){
+    currentType = type;
+    document.getElementById('btn-out').classList.toggle('active', type==='out');
+    document.getElementById('btn-in').classList.toggle('active', type==='in');
+    saveBtn.className = type;
+    saveBtn.textContent = type === 'out' ? 'Salva uscita' : 'Salva entrata';
+    renderCatSelect();
+  }
+
+  function addTx(type, category, amount, date, note){
+    if (!amount || amount <= 0) return;
+    tx.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      type, category, amount, date, note
+    });
+    lastAmounts[category] = amount;
+    save();
+    renderAll();
+  }
+
+  function removeTx(id){
+    tx = tx.filter(t => t.id !== id);
+    save();
+    renderAll();
+  }
+
+  function renderTotals(){
+    const monthTx = tx.filter(t => isInViewMonth(t.date));
+    const totIn = monthTx.filter(t => t.type==='in').reduce((s,t)=>s+t.amount,0);
+    const totOut = monthTx.filter(t => t.type==='out').reduce((s,t)=>s+t.amount,0);
+    totInEl.textContent = euro(totIn);
+    totOutEl.textContent = euro(totOut);
+    saldoEl.textContent = euro(totIn - totOut);
+    saldoEl.style.color = (totIn - totOut) < 0 ? '#E5A79A' : '#F5F3EC';
+  }
+
+  function renderTxList(){
+    const monthTx = tx.filter(t => isInViewMonth(t.date))
+                       .sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+    txListEl.innerHTML = '';
+    if (monthTx.length === 0){
+      txListEl.innerHTML = '<div class="empty-note">Nessun movimento questo mese.</div>';
+      return;
+    }
+    const byDay = {};
+    monthTx.forEach(t => {
+      byDay[t.date] = byDay[t.date] || [];
+      byDay[t.date].push(t);
+    });
+    Object.keys(byDay).sort().reverse().forEach(day => {
+      const dayEl = document.createElement('div');
+      dayEl.className = 'tx-day';
+      const dLabel = new Date(day + 'T00:00:00').toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'short'});
+      dayEl.innerHTML = `<div class="tx-day-label">${dLabel}</div>`;
+      byDay[day].forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'tx-row';
+        row.innerHTML = `
+          <div>
+            <div class="tx-cat">${t.category}</div>
+            ${t.note ? `<div class="tx-note">${t.note}</div>` : ''}
+          </div>
+          <div class="tx-right">
+            <div class="tx-amt ${t.type}">${t.type==='in' ? '+' : '−'}${euro(t.amount)}</div>
+            <button class="tx-del" data-del="${t.id}">×</button>
+          </div>
+        `;
+        dayEl.appendChild(row);
+      });
+      txListEl.appendChild(dayEl);
+    });
+    txListEl.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', () => removeTx(btn.getAttribute('data-del')));
+    });
+  }
+
+  function renderBreakdown(){
+    const monthTx = tx.filter(t => isInViewMonth(t.date) && t.type==='out');
+    const byCat = {};
+    monthTx.forEach(t => { byCat[t.category] = (byCat[t.category]||0) + t.amount; });
+    const entries = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
+    breakdownEl.innerHTML = '';
+    if (entries.length === 0){
+      breakdownEl.innerHTML = '<div class="empty-note">Nessuna uscita da mostrare.</div>';
+      return;
+    }
+    const max = entries[0][1];
+    entries.forEach(([cat, amt]) => {
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML = `
+        <div class="bar-top"><span>${cat}</span><span>${euro(amt)}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(amt/max*100).toFixed(0)}%"></div></div>
+      `;
+      breakdownEl.appendChild(row);
+    });
+  }
+
+  function renderAll(){
+    renderMonthLabel();
+    renderFixed();
+    renderTotals();
+    renderTxList();
+    renderBreakdown();
+  }
+
+  document.getElementById('prev-month').addEventListener('click', () => {
+    viewDate.setMonth(viewDate.getMonth()-1);
+    renderAll();
+  });
+  document.getElementById('next-month').addEventListener('click', () => {
+    viewDate.setMonth(viewDate.getMonth()+1);
+    renderAll();
+  });
+
+  document.getElementById('btn-out').addEventListener('click', () => setType('out'));
+  document.getElementById('btn-in').addEventListener('click', () => setType('in'));
+  catSelect.addEventListener('change', prefillAmount);
+
+  document.getElementById('add-cat-btn').addEventListener('click', () => {
+    const val = document.getElementById('new-cat').value.trim();
+    if (!val) return;
+    if (!cats[currentType].includes(val)) cats[currentType].push(val);
+    document.getElementById('new-cat').value = '';
+    save();
+    renderCatSelect();
+    catSelect.value = val;
+    prefillAmount();
+  });
+
+  saveBtn.addEventListener('click', () => {
+    const category = catSelect.value;
+    const amount = parseFloat(amtInput.value);
+    const date = dateInput.value || todayStr();
+    const note = noteInput.value.trim();
+    addTx(currentType, category, amount, date, note);
+    noteInput.value = '';
+  });
+
+  dateInput.value = todayStr();
+  setType('out');
+  renderAll();
+})();
+</script>
+</body>
+</html>
